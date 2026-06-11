@@ -39,17 +39,16 @@ function rankedByLabel(ranked: MatchResult["ranked_by"]): string {
 }
 
 const SUGGESTIONS = [
-  "I need a blockchain project audit.",
-  "Review my investor pitch deck.",
-  "Help me write a better ending for my book.",
-  "Analyze my website.",
+  "Audit my smart contract before I deploy it.",
+  "Figure out where my time went this week.",
+  "I want unfiltered investor feedback on my startup idea.",
 ];
 
 function priceLabel(r: Recommendation): string {
-  if (r.currency === "USDC" && r.price && r.price > 0) return `${r.price} USDC`;
-  if (r.currency === "MARKS" && r.marks_price && r.marks_price > 0)
-    return `${r.marks_price} MARKS`;
-  return "Free";
+  const parts: string[] = [];
+  if (r.price && r.price > 0) parts.push(`${r.price} USDC`);
+  if (r.marks_price && r.marks_price > 0) parts.push(`${r.marks_price} MARKS`);
+  return parts.length > 0 ? parts.join(" · ") : "Free";
 }
 
 export default function Home() {
@@ -94,44 +93,46 @@ export default function Home() {
 
   const rec = result?.recommendation;
 
+  const compact = loading || result !== null;
+
   return (
-    <main className="page">
+    <main className={compact ? "page compact" : "page"}>
       <header className="hero">
-        <div className="logo">
-          <img src="/logo.png" alt="Agent Matcher by ClawMarket" style={{height: "80px", width: "auto"}} />
+        <div className="hero-left">
+          <h1 className="hero-title">Agent Matcher</h1>
+          <p className="hero-sub">Describe your task in plain English. We&apos;ll find the right AI agent on ClawMarket, with pricing and a direct purchase link.</p>
         </div>
-        <h1>Agent Matcher</h1>
-        <p className="tagline">
-          Describe your task in plain English. We&apos;ll find the right AI agent on
-          ClawMarket — with pricing and a direct purchase link.
-        </p>
-      </header>
 
-      <form className="search" onSubmit={onSubmit}>
-        <input
-          ref={inputRef}
-          className="search-input"
-          type="text"
-          placeholder="e.g. I need someone to audit my blockchain project"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          aria-label="Describe your task"
-        />
-        <button className="search-btn" type="submit" disabled={loading || !query.trim()}>
-          {loading ? "Matching…" : "Find my agent"}
-        </button>
-      </form>
+        <div className="hero-divider">
+          <img src="/icon.png" alt="" />
+        </div>
 
-      {!result && !loading && (
-        <div className="suggestions">
-          <span className="suggestions-label">Try:</span>
-          {SUGGESTIONS.map((s) => (
-            <button key={s} className="chip" onClick={() => useSuggestion(s)} type="button">
-              {s}
+        <div className="hero-right">
+          <form className="search" onSubmit={onSubmit}>
+            <input
+              ref={inputRef}
+              className="search-input"
+              type="text"
+              placeholder="Describe your task..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-label="Describe your task"
+            />
+            <button className="search-btn" type="submit" disabled={loading || !query.trim()}>
+              {loading ? "Matching…" : "Find my agent"}
             </button>
-          ))}
+          </form>
+
+          <div className="suggestions" style={{visibility: result || loading ? 'hidden' : 'visible'}}>
+            <span className="suggestions-label">Try:</span>
+            {SUGGESTIONS.map((s) => (
+              <button key={s} className="chip" onClick={() => useSuggestion(s)} type="button">
+                {s}
+              </button>
+            ))}
+          </div>
         </div>
-      )}
+      </header>
 
       {loading && <div className="status">Searching the live ClawMarket catalog…</div>}
       {error && <div className="status error">{error}</div>}
@@ -191,7 +192,7 @@ export default function Home() {
       )}
 
       <footer className="foot">
-        Powered by Google Cloud Agent Builder · Gemini · MongoDB Atlas
+        Powered by Google ADK · Gemini · MongoDB Atlas
       </footer>
     </main>
   );

@@ -1,3 +1,4 @@
+/* trigger vercel deploy */
 :root {
   --bg: #0a0a12;
   --bg-card: #13131f;
@@ -24,58 +25,125 @@ body {
 }
 
 .page {
-  max-width: 760px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 3rem 1.25rem 4rem;
+  padding: 0 2rem 5rem;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
 .hero {
-  text-align: center;
-  margin-bottom: 2rem;
+  display: grid;
+  grid-template-columns: 1fr 60px 1fr;
+  align-items: center;
+  /* Leave room below the full-height hero for the footer (its top padding +
+     text + the page's bottom padding ≈ 150px) so "Powered by…" stays visible
+     within the first viewport without scrolling. */
+  min-height: calc(100vh - 150px);
+  gap: 0;
+  padding: 0;
+  transition: min-height 0.3s ease;
 }
 
-.logo {
-  margin-bottom: 0.75rem;
+/* When searching or showing results, collapse the full-height hero so the
+   results (a sibling below) come into view instead of sitting below the fold.
+   min-height alone isn't enough: the 700px divider icon forces the grid row
+   tall, so we shrink it (and the title) in compact mode too. */
+.page.compact .hero {
+  min-height: auto;
+  padding: 2rem 0;
+}
+
+.page.compact .hero-divider img {
+  height: 120px;
+}
+
+.page.compact .hero-title {
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+}
+
+.hero-left {
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   justify-content: center;
+  padding: 3rem 2rem 3rem 4rem;
+  overflow: visible;
+  z-index: 2;
+  position: relative;
 }
 
-.hero h1 {
-  font-size: clamp(2rem, 6vw, 3rem);
+.hero-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  position: relative;
+}
+
+.hero-divider img {
+  height: 460px;
+  width: auto;
+  filter: drop-shadow(0 0 20px rgba(124, 58, 237, 0.6)) drop-shadow(0 0 40px rgba(167, 139, 250, 0.3));
+  transform: rotate(-20deg);
+  pointer-events: none;
+  transition: height 0.3s ease;
+}
+
+.hero-right {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 3rem 4rem 3rem 4rem;
+  gap: 1.5rem;
+}
+
+.hero-title {
+  display: block;
+  font-size: clamp(2.5rem, 4.5vw, 4rem);
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: -2px;
   margin: 0 0 0.75rem;
-  line-height: 1.05;
+  padding-bottom: 0.1em;
+  background: linear-gradient(135deg, #ffffff 0%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  width: fit-content;
 }
 
-.tagline {
+.hero-sub {
+  font-size: 1rem;
   color: var(--text-dim);
-  max-width: 30rem;
-  margin: 0 auto;
-  line-height: 1.5;
+  line-height: 1.6;
+  max-width: 340px;
 }
 
 .search {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  width: 100%;
+  align-items: flex-start;
 }
 
 .search-input {
   flex: 1;
-  padding: 0.95rem 1.1rem;
+  min-width: 0;
+  padding: 1.1rem 1.4rem;
   border-radius: 12px;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(124, 58, 237, 0.4);
   background: var(--bg-card);
   color: var(--text);
   font-size: 1rem;
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .search-input:focus {
   border-color: var(--accent);
+  box-shadow: 0 0 20px rgba(124, 58, 237, 0.25);
 }
 
 .search-btn {
@@ -88,6 +156,8 @@ body {
   font-size: 0.95rem;
   cursor: pointer;
   white-space: nowrap;
+  min-width: 140px;
+  height: 52px;
   transition: opacity 0.15s, transform 0.05s;
 }
 
@@ -105,12 +175,13 @@ body {
   flex-wrap: wrap;
   gap: 0.5rem;
   align-items: center;
-  margin-bottom: 1.5rem;
 }
 
 .suggestions-label {
   color: var(--text-dim);
   font-size: 0.85rem;
+  width: 100%;
+  margin-bottom: 0.25rem;
 }
 
 .chip {
@@ -137,6 +208,10 @@ body {
 
 .status.error {
   color: #ff8585;
+}
+
+.result {
+  padding: 2rem 4rem;
 }
 
 .result-meta {
@@ -258,6 +333,26 @@ body {
 }
 
 @media (max-width: 600px) {
+  .hero {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    padding: 3rem 0;
+    gap: 2rem;
+  }
+  .hero-left {
+    align-items: center;
+    text-align: center;
+    padding: 0;
+  }
+  .hero-sub {
+    max-width: none;
+  }
+  .hero-divider img {
+    height: 150px;
+  }
+  .hero-right {
+    padding: 0;
+  }
   .search {
     flex-direction: column;
   }
