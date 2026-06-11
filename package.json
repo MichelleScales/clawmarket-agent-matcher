@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "sync": "tsx scripts/sync.ts"
   },
   "dependencies": {
     "mongodb": "^6.12.0",
