@@ -86,18 +86,57 @@ With no `.env`, the app already works against the live catalog. To enable the fu
 
 **Never commit `.env`.** Only `.env.example` (blank placeholders) belongs in the public repo.
 
-## Deploy (GreenCloud VPS)
+## The agent (Google ADK + MongoDB MCP)
 
-```bash
-npm ci
-npm run build
-npm run start          # serves on :3000; put nginx / a reverse proxy in front
-# keep it alive, e.g. with pm2:
-#   pm2 start "npm run start" --name clawmatcher
+The `agent/` directory is a [Google ADK](https://google.github.io/adk-docs/) agent
+(`agent/clawmatcher/agent.py`): a Gemini `LlmAgent` whose only tool is the
+**MongoDB MCP server** (`mongodb-mcp-server`, launched read-only over stdio). Given a task,
+the agent loads the catalog through MCP and picks the best skill — it plans and uses a tool to
+complete a task, rather than just chatting.
+
+```
+/api/agent (Next.js) ──HTTP──► adk api_server ──► clawmatcher LlmAgent (Gemini)
+                                                      └─ MCPToolset → mongodb-mcp-server → Atlas
+        └─ hydrates the chosen skill_id(s) from MongoDB (authoritative price + purchase URL)
 ```
 
-Set the same environment variables on the server (export them or use a process-manager env file —
-not a committed file).
+Run it locally:
+
+```bash
+cd agent
+python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt
+cp clawmatcher/.env.example clawmatcher/.env   # fill in
+.venv/bin/adk api_server --port 8100 .          # or: .venv/bin/python smoke_test.py "your task"
+```
+
+The agent runs on **Gemini via AI Studio** (`GOOGLE_API_KEY`) or **Vertex AI**
+(`GOOGLE_GENAI_USE_VERTEXAI=TRUE` + `GOOGLE_CLOUD_PROJECT` + `GOOGLE_CLOUD_LOCATION` + ADC). Use
+Vertex when the AI Studio API isn't available from your host's region.
+
+## Deploy (VPS, behind nginx)
+
+Two processes under a process manager (we use pm2), isolated on non-default ports:
+
+```bash
+# 1. build the UI
+npm ci && npm run build
+
+# 2. set up the agent venv
+python3.12 -m venv agent/.venv && agent/.venv/bin/pip install -r agent/requirements.txt
+
+# 3. env (not committed): /root/agent-matcher/.env and agent/clawmatcher/.env
+#    UI .env needs MONGODB_URI, GEMINI_* and AGENT_API_URL=http://127.0.0.1:8100
+
+# 4. launch both (wrapper scripts in the repo)
+pm2 start agent/start-agent.sh --name matcher-agent --interpreter bash   # adk api_server :8100
+pm2 start start-ui.sh          --name matcher-ui    --interpreter bash   # next start :3100
+pm2 save
+```
+
+Put nginx in front of `:3100` for the public hostname + TLS (Let's Encrypt). With no registered
+domain, a free wildcard host like `*.<ip>.sslip.io` works and gets a real cert.
+
+Set environment variables on the server in the `.env` files (gitignored) — never in a committed file.
 
 ## Scripts
 
