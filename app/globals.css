@@ -63,6 +63,18 @@ body {
   font-size: clamp(1.8rem, 3vw, 2.5rem);
 }
 
+/* In the collapsed state each side column otherwise centers a *pair* of
+   children (title + sub on the left, search + suggestions on the right), so
+   the title and search bar sit above the row's center axis by differing
+   amounts while the logo (a lone element) sits on it. Dropping the secondary
+   elements leaves one element per column, so title, logo, and search all
+   center on the same axis in a single row. The suggestions are already
+   visibility:hidden here, so removing their reserved space is invisible. */
+.page.compact .hero-sub,
+.page.compact .suggestions {
+  display: none;
+}
+
 .hero-left {
   display: flex;
   flex-direction: column;
