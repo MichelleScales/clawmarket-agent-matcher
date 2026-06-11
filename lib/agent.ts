@@ -84,21 +84,30 @@ async function runAgent(query: string): Promise<string> {
     throw new Error(`adk session create -> ${created.status}`);
   }
 
-  const res = await fetch(`${AGENT_API_URL}/run`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      app_name: APP_NAME,
-      user_id: "web",
-      session_id: sessionId,
-      new_message: { role: "user", parts: [{ text: query }] },
-    }),
-  });
-  if (!res.ok) {
-    throw new Error(`adk run -> ${res.status}: ${await res.text()}`);
+  // Retry the run on transient model errors (e.g. Vertex 429 RESOURCE_EXHAUSTED,
+  // which adk surfaces as a 500). New GCP projects have low default Gemini quotas,
+  // so a short backoff keeps requests on the agent path instead of falling back.
+  const RETRYABLE = new Set([429, 500, 503]);
+  let res: Response | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    res = await fetch(`${AGENT_API_URL}/run`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        app_name: APP_NAME,
+        user_id: "web",
+        session_id: sessionId,
+        new_message: { role: "user", parts: [{ text: query }] },
+      }),
+    });
+    if (res.ok) break;
+    if (!RETRYABLE.has(res.status) || attempt === 2) {
+      throw new Error(`adk run -> ${res.status}: ${await res.text()}`);
+    }
+    await new Promise((r) => setTimeout(r, 2500 * (attempt + 1)));
   }
 
-  const events = (await res.json()) as AdkEvent[];
+  const events = (await res!.json()) as AdkEvent[];
   // The final answer is the last event carrying a text part.
   let finalText = "";
   for (const ev of events) {
