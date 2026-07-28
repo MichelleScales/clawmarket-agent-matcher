@@ -11,6 +11,9 @@ build/
 .env.local
 .env.production
 **/.env
+.env.bak
+*.bak
+**/*.bak
 
 # python / adk agent
 __pycache__/
